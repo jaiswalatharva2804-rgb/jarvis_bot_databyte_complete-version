@@ -65,23 +65,53 @@ class CommandExecutor:
     def _execute_on_host(self, command: str) -> Tuple[int, str, str]:
         """
         Execute command directly on host system
+        Works on both Windows (PowerShell/cmd) and Unix (bash)
         
         Args:
-            command: The bash command to execute
+            command: The command to execute
             
         Returns:
             Tuple of (exit_code, stdout, stderr)
         """
+        import platform
+        
         try:
-            # Run command in bash with 30 second timeout
-            result = subprocess.run(
-                command,
-                shell=True,
-                capture_output=True,
-                text=True,
-                cwd=self.context.working_directory,
-                timeout=30
-            )
+            system = platform.system()
+            
+            if system == "Windows":
+                # On Windows, use PowerShell for better compatibility
+                # Check if command looks like PowerShell or cmd
+                if command.startswith(("Get-", "Set-", "New-", "Remove-")) or "$" in command:
+                    # PowerShell command
+                    result = subprocess.run(
+                        ["powershell", "-Command", command],
+                        capture_output=True,
+                        text=True,
+                        cwd=self.context.working_directory,
+                        timeout=30
+                    )
+                else:
+                    # Generic command, try in PowerShell with shell=True
+                    result = subprocess.run(
+                        command,
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        cwd=self.context.working_directory,
+                        timeout=30,
+                        executable="powershell"
+                    )
+            else:
+                # On Unix systems, use bash
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    cwd=self.context.working_directory,
+                    timeout=30,
+                    executable="/bin/bash"
+                )
             
             return (result.returncode, result.stdout, result.stderr)
             

@@ -177,19 +177,33 @@ class LLMHandler:
         return True
 
     def _build_system_prompt(self) -> str:
-        return """You are a bash command generator.
+        import platform
+        system = platform.system()
+        
+        if system == "Windows":
+            return """You are a cross-platform command generator for Windows PowerShell/cmd.
+
+Return exactly ONE single-line command that works on Windows.
+Use PowerShell commands: Get-ChildItem (or ls), Get-Content (or cat), Set-Location (or cd), New-Item, Remove-Item, Copy-Item, Move-Item.
+Use echo for messages.
+No explanations. No markdown. No comments. No extra text.
+
+For informational queries, use echo with the answer.
+Example: "what time is it" → echo "The current time is $(Get-Date -Format 'HH:mm')"
+
+If clarification is required, return exactly ONE single-line question ending with ?.
+If the user does not specify a path, assume the current directory (.).
+"""
+        else:
+            return """You are a cross-platform command generator for bash/shell.
 
 Return exactly ONE single-line bash command.
-No explanations.
-No markdown.
-No comments.
-No extra text.
+No explanations. No markdown. No comments. No extra text.
 
 For informational queries (like "what time is it", "what's the date", etc.), use echo with the answer.
 Example: If asked "what time is it", return: echo "The current time is $(date +%H:%M)"
 
 If clarification is required, return exactly ONE single-line question ending with ?.
-
 If the user does not specify a path, assume the current directory (.).
 """
 
